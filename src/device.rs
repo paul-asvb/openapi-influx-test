@@ -34,6 +34,7 @@ pub(super) enum DeviceError {
     Unauthorized(String),
 }
 
+/// List all registered devices
 #[utoipa::path(
     get,
     path = "/devices",
@@ -46,24 +47,22 @@ pub(super) async fn list(State(store): State<Arc<Store>>) -> Json<Vec<Device>> {
     Json(todos)
 }
 
+/// Register a Device
 #[utoipa::path(
     post,
-    path = "/devices",
+    path = "/device",
     request_body = i32,
     responses(
         (status = 201, description = "Device registered successfully", body = Device),
         (status = 409, description = "Device already exists", body = DeviceError)
     )
 )]
-pub(super) async fn register(
-    State(store): State<Arc<Store>>,
-    Json(todo): Json<Device>,
-) -> impl IntoResponse {
+pub(super) async fn register(State(store): State<Arc<Store>>, id: i32) -> impl IntoResponse {
     let mut devices = store.lock().await;
 
     devices
         .iter_mut()
-        .find(|existing_todo| existing_todo.id == todo.id)
+        .find(|existing_todo| existing_todo.id == id)
         .map(|found| {
             (
                 StatusCode::CONFLICT,
@@ -75,6 +74,11 @@ pub(super) async fn register(
                 .into_response()
         })
         .unwrap_or_else(|| {
+            let todo = Device {
+                id,
+                value: "random".to_owned(),
+                done: false,
+            };
             devices.push(todo.clone());
 
             (StatusCode::CREATED, Json(todo)).into_response()
@@ -128,9 +132,6 @@ pub(super) async fn change_metadata(
     params(
         ("id" = i32, Path, description = "Device database id")
     ),
-    security(
-        ("api_key" = [])
-    )
 )]
 pub(super) async fn delete(
     Path(id): Path<i32>,
