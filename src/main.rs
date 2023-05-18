@@ -50,10 +50,9 @@ async fn main() {
         .unwrap();
 }
 
-async fn root() -> &'static str {
-    "Hello checker! -> /docs"
+pub async fn root() -> axum::response::Html<&'static str> {
+    "<a href='/docs'>docs</a>".into()
 }
-
 async fn health() -> StatusCode {
     StatusCode::OK
 }

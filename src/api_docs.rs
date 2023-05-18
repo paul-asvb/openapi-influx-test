@@ -11,7 +11,7 @@ use crate::device;
         device::delete,
     ),
     components(
-        schemas(device::Device, device::DeviceError)
+        schemas(device::Device, device::DeviceError, device::DeviceRegister)
     ),
     tags(
         (name = "granit", description = "Device management API")
