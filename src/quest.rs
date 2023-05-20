@@ -1,5 +1,5 @@
 use questdb::{
-    ingress::{Buffer, SenderBuilder},
+    ingress::{Buffer, CertificateAuthority, SenderBuilder, Tls},
     Result,
 };
 use uuid::Uuid;
@@ -7,7 +7,23 @@ use uuid::Uuid;
 use crate::measurement::MoistureMeasurement;
 
 pub fn write(sensor_id: Uuid, measurement: MoistureMeasurement) -> Result<()> {
-    let mut sender = SenderBuilder::new("localhost", 9009).connect()?;
+    let host: String = std::env::args()
+        .nth(1)
+        .unwrap_or("positive-orange-118-67209e79.ilp.c7at.questdb.com".to_string());
+    let port: u16 = std::env::args()
+        .nth(2)
+        .unwrap_or("30104".to_string())
+        .parse()
+        .unwrap();
+    let mut sender = SenderBuilder::new(host, port)
+        .auth(
+            "admin",                                       // kid
+            "5j_o9Ea9M8n_1HRK7F6Fih8c_W-Dbb6qPC5VFyvIXtA", // d
+            "lPLYyXVgGLPZfikoqh3LPIlqeYx-CFFEAxPeO2JC98g", // x
+            "sYwijDcqBxZC78GZ_j8jrBRUVKHwMzYkLBYEpPxnc4Q",
+        ) // y
+        .tls(Tls::Enabled(CertificateAuthority::WebpkiRoots))
+        .connect()?;
     let mut buffer = Buffer::new();
     buffer
         .table("sensors")?
