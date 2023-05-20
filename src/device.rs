@@ -12,10 +12,7 @@ use tracing::debug;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::{
-    measurement::{self, MoistureMeasurement},
-    quest,
-};
+use crate::{measurement::MoistureMeasurement, quest};
 
 /// In-memory store
 pub(super) type Store = Mutex<Vec<Device>>;
@@ -115,8 +112,6 @@ pub(super) async fn change_metadata(
     State(store): State<Arc<Store>>,
     Json(payload): extract::Json<String>,
 ) -> StatusCode {
-    debug!("---->ohkjh");
-
     let metadata: serde_json::Value = serde_json::from_str(&payload).unwrap();
 
     let mut devices = store.lock().await;
@@ -135,13 +130,13 @@ pub(super) async fn change_metadata(
 
 /// Update Device metadata
 #[utoipa::path(
-    put,
+    post,
     path = "/devices/{id}/write",
     responses(
         (status = 200, description = "Device data written successfully"),
         (status = 404, description = "Device not found")
     ),
-    request_body = serde_json::Value,
+    request_body = measurement::MoistureMeasurement,
     params(
         ("id" = Uuid, Path, description = "Device id"),
     ),
