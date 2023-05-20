@@ -1,6 +1,13 @@
-use utoipa::OpenApi;
+use serde::{Deserialize, Serialize};
+use utoipa::{OpenApi, ToSchema};
 
 use crate::{device, measurement};
+
+#[derive(Serialize, Deserialize, ToSchema)]
+pub struct RandomMetadata {
+    #[schema(example = "This is a String")]
+    pub mymetadata: String,
+}
 
 #[derive(OpenApi)]
 #[openapi(
@@ -13,7 +20,7 @@ use crate::{device, measurement};
 
     ),
     components(
-        schemas(device::Device, device::DeviceError, device::DeviceRegister, measurement::MoistureMeasurement)
+        schemas(device::Device, device::DeviceError, device::DeviceRegister, measurement::MoistureMeasurement,RandomMetadata)
     ),
     tags(
         (name = "granit", description = "Device management API")

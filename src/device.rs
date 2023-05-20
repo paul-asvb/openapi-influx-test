@@ -12,19 +12,19 @@ use tracing::debug;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::{measurement::MoistureMeasurement, quest};
+use crate::{api_docs::RandomMetadata, measurement::MoistureMeasurement, quest};
 
 /// In-memory store
 pub(super) type Store = Mutex<Vec<Device>>;
 
-#[derive(Serialize, Deserialize, ToSchema, Clone)]
+#[derive(Serialize, Deserialize, ToSchema, Clone, Debug)]
 pub(super) struct Device {
     id: Uuid,
     #[schema(example = "json with any metadata")]
     metadata: Option<serde_json::Value>,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema, Debug)]
 pub(super) enum DeviceError {
     /// Device already exists conflict.
     #[schema(example = "Device already exists")]
@@ -58,7 +58,7 @@ pub struct DeviceRegister {
 /// Register a Device
 #[utoipa::path(
     post,
-    path = "/device",
+    path = "/devices",
     request_body = DeviceRegister,
     responses(
         (status = 201, description = "Device registered successfully", body = Device),
@@ -102,7 +102,7 @@ pub(super) async fn register(
         (status = 200, description = "Device metadata updated successfully"),
         (status = 404, description = "Device not found")
     ),
-    request_body = serde_json::Value,
+    request_body = RandomMetadata,
     params(
         ("id" = Uuid, Path, description = "Device id"),
     ),
@@ -110,13 +110,9 @@ pub(super) async fn register(
 pub(super) async fn change_metadata(
     Path(id): Path<Uuid>,
     State(store): State<Arc<Store>>,
-    Json(payload): extract::Json<String>,
+    Json(metadata): extract::Json<serde_json::Value>,
 ) -> StatusCode {
-    let metadata: serde_json::Value = serde_json::from_str(&payload).unwrap();
-
     let mut devices = store.lock().await;
-
-    debug!("{}", &payload);
 
     devices
         .iter_mut()
@@ -128,7 +124,7 @@ pub(super) async fn change_metadata(
         .unwrap_or(StatusCode::NOT_FOUND)
 }
 
-/// Update Device metadata
+/// Write Device measurment
 #[utoipa::path(
     post,
     path = "/devices/{id}/write",
@@ -136,7 +132,7 @@ pub(super) async fn change_metadata(
         (status = 200, description = "Device data written successfully"),
         (status = 404, description = "Device not found")
     ),
-    request_body = measurement::MoistureMeasurement,
+    request_body = MoistureMeasurement,
     params(
         ("id" = Uuid, Path, description = "Device id"),
     ),
@@ -194,3 +190,5 @@ pub(super) async fn delete(
             .into_response()
     }
 }
+
+

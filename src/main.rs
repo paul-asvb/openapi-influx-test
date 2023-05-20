@@ -37,13 +37,13 @@ async fn main() {
         .route("/", get(root))
         .route("/health", get(health))
         .route("/devices", routing::get(device::list))
-        .route("/device", routing::post(device::register))
+        .route("/devices", routing::post(device::register))
         .route(
-            "/device/:id",
+            "/devices/:id",
             routing::put(device::change_metadata).delete(device::delete),
         )
         .route(
-            "/device/:id/write",
+            "/devices/:id/write",
             routing::post(device::write_data),
         )
         .with_state(store);
