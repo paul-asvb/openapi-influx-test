@@ -18,7 +18,6 @@ mod tests {
     use serde_json::{self, json};
 
     use crate::measurement::MoistureMeasurement;
-
     #[test]
     fn test_measure_deserialization() {
         let json_value = json!({ "datetime": 1684599720,"temperature":1.2,"dryness_index":1.24 });
