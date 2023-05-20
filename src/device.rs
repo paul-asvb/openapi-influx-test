@@ -12,6 +12,11 @@ use tracing::debug;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
+use crate::{
+    measurement::{self, MoistureMeasurement},
+    quest,
+};
+
 /// In-memory store
 pub(super) type Store = Mutex<Vec<Device>>;
 
@@ -112,7 +117,7 @@ pub(super) async fn change_metadata(
 ) -> StatusCode {
     debug!("---->ohkjh");
 
-    let metadata:serde_json::Value = serde_json::from_str(&payload).unwrap();
+    let metadata: serde_json::Value = serde_json::from_str(&payload).unwrap();
 
     let mut devices = store.lock().await;
 
@@ -126,6 +131,36 @@ pub(super) async fn change_metadata(
             StatusCode::OK
         })
         .unwrap_or(StatusCode::NOT_FOUND)
+}
+
+/// Update Device metadata
+#[utoipa::path(
+    put,
+    path = "/devices/{id}/write",
+    responses(
+        (status = 200, description = "Device data written successfully"),
+        (status = 404, description = "Device not found")
+    ),
+    request_body = serde_json::Value,
+    params(
+        ("id" = Uuid, Path, description = "Device id"),
+    ),
+)]
+pub(super) async fn write_data(
+    Path(id): Path<Uuid>,
+    State(store): State<Arc<Store>>,
+    Json(measurement): extract::Json<MoistureMeasurement>,
+) -> StatusCode {
+    let mut devices = store.lock().await;
+
+    if let Some(device) = devices.iter_mut().find(|d| d.id == id) {
+        match quest::write(device.id, measurement) {
+            Ok(_) => StatusCode::OK,
+            Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    } else {
+        return StatusCode::NOT_FOUND;
+    }
 }
 
 /// Delete Device item by id

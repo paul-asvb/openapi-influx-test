@@ -15,7 +15,8 @@ use crate::{api_docs::GranitApiDoc, config::Configuration, device::Store};
 mod api_docs;
 mod config;
 mod device;
-mod influx;
+mod measurement;
+mod quest;
 
 #[tokio::main]
 async fn main() {
@@ -40,6 +41,10 @@ async fn main() {
         .route(
             "/device/:id",
             routing::put(device::change_metadata).delete(device::delete),
+        )
+        .route(
+            "/device/:id/write",
+            routing::post(device::write_data),
         )
         .with_state(store);
 
