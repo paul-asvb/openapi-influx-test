@@ -28,7 +28,11 @@ async fn main() {
         .with_max_level(config.log_level())
         .init();
 
-    info!("app starting");
+    // for (n, v) in env::vars() {
+    //     println!("{}: {}", n, v);
+    // }
+
+    info!("{:?}", &config);
 
     let store = Arc::new(Store::default());
 
@@ -42,10 +46,7 @@ async fn main() {
             "/devices/:id",
             routing::put(device::change_metadata).delete(device::delete),
         )
-        .route(
-            "/devices/:id/write",
-            routing::post(device::write_data),
-        )
+        .route("/devices/:id/write", routing::post(device::write_data))
         .with_state(store);
 
     let addr = SocketAddr::from((config.socket_addr(), config.port));

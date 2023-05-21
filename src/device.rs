@@ -8,7 +8,6 @@ use axum::{
 use hyper::StatusCode;
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
-use tracing::debug;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
