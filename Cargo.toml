@@ -41,3 +41,6 @@ utoipa-swagger-ui = { version = "3", features = ["axum"] }
 hyper = "0.14.26"
 chrono = { version = "0.4.24", features = ["serde"] }
 questdb-rs = "2.1.3"
+object_store = { version = "0.6.0", features = ["cloud", "http"] }
+rusoto_core = "0.48.0"
+rusoto_s3 = "0.48.0"

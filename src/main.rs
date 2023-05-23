@@ -1,4 +1,7 @@
-use axum::{routing::get, Router};
+use axum::{
+    routing::{get, post},
+    Router,
+};
 use dotenvy::dotenv;
 use reqwest::StatusCode;
 use std::net::SocketAddr;
@@ -17,6 +20,8 @@ mod config;
 mod device;
 mod measurement;
 mod quest;
+//mod dump;
+mod r2;
 
 #[tokio::main]
 async fn main() {
@@ -40,6 +45,7 @@ async fn main() {
         .merge(SwaggerUi::new("/docs").url("/api-docs/openapi.json", GranitApiDoc::openapi()))
         .route("/", get(root))
         .route("/health", get(health))
+        //.route("/bin-dump", post(dump))
         .route("/devices", routing::get(device::list))
         .route("/devices", routing::post(device::register))
         .route(
