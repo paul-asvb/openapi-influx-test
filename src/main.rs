@@ -1,24 +1,21 @@
 use axum::{
-    body::Full,
     routing::{get, post},
     Router,
 };
 use dotenvy::dotenv;
 use reqwest::StatusCode;
 use std::net::SocketAddr;
-use tracing::log::info;
 
 use std::sync::Arc;
 
-use axum::routing;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-use crate::{api_docs::GranitApiDoc, config::Configuration, device::Store};
+use crate::{api_docs::GranitApiDoc, config::Configuration};
 
 mod api_docs;
 mod config;
-mod device;
+//mod device;
 mod measurement;
 mod r2;
 
@@ -39,21 +36,24 @@ async fn main() {
 
     //info!("{:?}", &config);
 
-    let store = Arc::new(Store::default());
+    //let store = Arc::new(Store::default());
 
     let app = Router::new()
         .merge(SwaggerUi::new("/docs").url("/api-docs/openapi.json", GranitApiDoc::openapi()))
         .route("/", get(root))
         .route("/health", get(health))
-       // .route("/bin-dump", post(dump))
-        .route("/devices", routing::get(device::list))
-        .route("/devices", routing::post(device::register))
-        .route(
-            "/devices/:id",
-            routing::put(device::change_metadata).delete(device::delete),
-        )
-        .route("/devices/:id/write", routing::post(device::write_data))
-        .with_state(config);
+        .route("/dump", post(r2::dump))
+        .with_state(config.clone());
+
+    // .route("/health", get(health))
+    // .route("/devices", routing::get(device::list))
+    // .route("/devices", routing::post(device::register))
+    // .route(
+    //     "/devices/:id",
+    //     routing::put(device::change_metadata).delete(device::delete),
+    // )
+    // .route("/devices/:id/write", routing::post(device::write_data))
+    // .with_state(store)
 
     let addr = SocketAddr::from((config.socket_addr(), config.port));
     axum::Server::bind(&addr)
@@ -66,13 +66,5 @@ pub async fn root() -> axum::response::Html<&'static str> {
     "<a href='/docs'>docs</a>".into()
 }
 async fn health() -> StatusCode {
-    StatusCode::OK
-}
-
-async fn dump(body: Full<axum::body::Bytes>) -> StatusCode {
-    // let content = body.into();
-
-    // r2::store_object("asdf".to_string(), content, config).await;
-
     StatusCode::OK
 }

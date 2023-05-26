@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use utoipa::{OpenApi, ToSchema};
 
-use crate::{device, measurement};
+use crate::{r2};
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct RandomMetadata {
@@ -12,15 +12,16 @@ pub struct RandomMetadata {
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        device::list,
-        device::register,
-        device::change_metadata,
-        device::write_data,
-        device::delete,
+        r2::dump
+        // device::list,
+        // device::register,
+        // device::change_metadata,
+        // device::write_data,
+        // device::delete,
 
     ),
     components(
-        schemas(device::Device, device::DeviceError, device::DeviceRegister, measurement::MoistureMeasurement,RandomMetadata)
+        //schemas(device::Device, device::DeviceError, device::DeviceRegister, measurement::MoistureMeasurement,RandomMetadata)
     ),
     tags(
         (name = "granit", description = "Device management API")
