@@ -3,7 +3,6 @@
 app = "shy-paper-5398"
 kill_signal = "SIGINT"
 kill_timeout = 5
-primary_region = "waw"
 
 [env]
 ENV = "production"
