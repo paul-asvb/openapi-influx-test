@@ -11,7 +11,7 @@ use tokio::sync::Mutex;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::{api_docs::RandomMetadata, measurement::MoistureMeasurement, quest};
+use crate::measurement::MoistureMeasurement;
 
 /// In-memory store
 pub(super) type Store = Mutex<Vec<Device>>;
@@ -143,14 +143,15 @@ pub(super) async fn write_data(
 ) -> StatusCode {
     let mut devices = store.lock().await;
 
-    if let Some(device) = devices.iter_mut().find(|d| d.id == id) {
-        match quest::write(device.id, measurement) {
-            Ok(_) => StatusCode::OK,
-            Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
-        }
-    } else {
-        return StatusCode::NOT_FOUND;
-    }
+    // if let Some(device) = devices.iter_mut().find(|d| d.id == id) {
+    //     match quest::write(device.id, measurement) {
+    //         Ok(_) => StatusCode::OK,
+    //         Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
+    //     }
+    // } else {
+    //     return StatusCode::NOT_FOUND;
+    // }
+    StatusCode::NOT_IMPLEMENTED
 }
 
 /// Delete Device item by id
@@ -189,5 +190,3 @@ pub(super) async fn delete(
             .into_response()
     }
 }
-
-

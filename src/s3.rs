@@ -1,70 +1,61 @@
-use std::io::Cursor;
+use std::{env, fs::File, io::Read};
 
-use rusoto_core::Region;
-use rusoto_s3::{PutObjectRequest, S3Client, S3};
+use aws_config::meta::region::RegionProviderChain;
+use aws_sdk_s3 as s3;
+use tracing::{debug, error};
 
 // Save a `Stream` to a file
 pub async fn store_object() {
-    let s3 = AmazonS3Builder::new()
-        .with_region("eu-central-1")
-        .with_bucket_name("bton")
-        .build();
+    debug!("store_object");
+    // let vars = env::vars();
 
-    // create an ObjectStore
-    let object_store: Arc<dyn ObjectStore> = Arc::new(get_object_store());
+    // // Iterate over the variables and print them
+    // for (key, value) in vars {
+    //     debug!("{}: {}", key, value);
+    // }
 
-    // Retrieve a specific file
-    let path: Path = "data/file01.parquet".try_into().unwrap();
+    let region_provider = RegionProviderChain::default_provider().or_else("eu-central-1");
+    let config = aws_config::from_env().region(region_provider).load().await;
 
-    // fetch the bytes from object store
-    let stream = object_store.get(&path).await.unwrap().into_stream();
+    debug!("{:#?}", &config);
+    let client = s3::Client::new(&config);
 
-    // Count the '0's using `map` from `StreamExt` trait
-    let num_zeros = stream
-        .map(|bytes| {
-            let bytes = bytes.unwrap();
-            bytes.iter().filter(|b| **b == 0).count()
-        })
-        .collect::<Vec<usize>>()
-        .await
-        .into_iter()
-        .sum::<usize>();
+    let mut f = File::open("./fly.toml").unwrap();
 
-    println!("Num zeros in {} is {}", path, num_zeros);
+    let mut buffer = Vec::new();
 
-    // create an ObjectStore
-    let object_store: Arc<dyn ObjectStore> = Arc::new(get_object_store());
+    // read the whole file
+    f.read_to_end(&mut buffer).unwrap();
 
-    // Retrieve a specific file
-    let path: Path = "data/file01.parquet".try_into().unwrap();
+    let put = client
+        .put_object()
+        .body(buffer.into())
+        .bucket("bton")
+        .key("input");
+    let put_object_request = put.send().await;
 
-    // fetch the bytes from object store
-    let stream = object_store.get(&path).await.unwrap().into_stream();
+    match put_object_request {
+        Ok(_) => debug!("File uploaded successfully"),
+        Err(err) => error!("{}", err),
+    }
 
-    // Count the '0's using `map` from `StreamExt` trait
-    let num_zeros = stream
-        .map(|bytes| {
-            let bytes = bytes.unwrap();
-            bytes.iter().filter(|b| **b == 0).count()
-        })
-        .collect::<Vec<usize>>()
-        .await
-        .into_iter()
-        .sum::<usize>();
-
-    println!("Num zeros in {} is {}", path, num_zeros);
+    // dbg!(bla);
 }
 
 #[cfg(test)]
 mod tests {
 
     use super::store_object;
+    use dotenvy::dotenv;
 
     #[tokio::test]
     async fn test_store_object() {
+        dotenv().ok();
+
         tracing_subscriber::fmt()
             .with_max_level(tracing::Level::DEBUG)
             .init();
+
         store_object().await;
     }
 }
