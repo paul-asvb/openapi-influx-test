@@ -1,20 +1,25 @@
 use serde::Deserialize;
 use tracing::Level;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum Environment {
     Production,
     Development,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Configuration {
     #[serde(default = "default_env")]
     pub env: Environment,
 
     #[serde(default = "default_port")]
     pub port: u16,
+
+    pub cf_access_key_id: String,
+    pub cf_secret_access_key: String,
+    pub cf_account_id: String,
+    pub cf_bucket_name: String,
 }
 
 fn default_port() -> u16 {

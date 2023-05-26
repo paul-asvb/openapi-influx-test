@@ -1,4 +1,5 @@
 use axum::{
+    body::Full,
     routing::{get, post},
     Router,
 };
@@ -19,13 +20,14 @@ mod api_docs;
 mod config;
 mod device;
 mod measurement;
-mod s3;
+mod r2;
 
 #[tokio::main]
 async fn main() {
     dotenv().ok();
 
-    let config = envy::from_env::<Configuration>().expect("required config could not be parsed");
+    let config =
+        Arc::new(envy::from_env::<Configuration>().expect("required config could not be parsed"));
 
     tracing_subscriber::fmt()
         .with_max_level(config.log_level())
@@ -35,7 +37,7 @@ async fn main() {
     //     println!("{}: {}", n, v);
     // }
 
-    info!("{:?}", &config);
+    //info!("{:?}", &config);
 
     let store = Arc::new(Store::default());
 
@@ -43,7 +45,7 @@ async fn main() {
         .merge(SwaggerUi::new("/docs").url("/api-docs/openapi.json", GranitApiDoc::openapi()))
         .route("/", get(root))
         .route("/health", get(health))
-        //.route("/bin-dump", post(dump))
+       // .route("/bin-dump", post(dump))
         .route("/devices", routing::get(device::list))
         .route("/devices", routing::post(device::register))
         .route(
@@ -51,7 +53,7 @@ async fn main() {
             routing::put(device::change_metadata).delete(device::delete),
         )
         .route("/devices/:id/write", routing::post(device::write_data))
-        .with_state(store);
+        .with_state(config);
 
     let addr = SocketAddr::from((config.socket_addr(), config.port));
     axum::Server::bind(&addr)
@@ -64,5 +66,13 @@ pub async fn root() -> axum::response::Html<&'static str> {
     "<a href='/docs'>docs</a>".into()
 }
 async fn health() -> StatusCode {
+    StatusCode::OK
+}
+
+async fn dump(body: Full<axum::body::Bytes>) -> StatusCode {
+    // let content = body.into();
+
+    // r2::store_object("asdf".to_string(), content, config).await;
+
     StatusCode::OK
 }
