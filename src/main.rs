@@ -42,7 +42,8 @@ async fn main() {
         .merge(SwaggerUi::new("/docs").url("/api-docs/openapi.json", GranitApiDoc::openapi()))
         .route("/", get(root))
         .route("/health", get(health))
-        .route("/dump", post(r2::dump))
+        .route("/r2/dump", post(r2::dump))
+        .route("/r2/list", get(r2::list))
         .with_state(config.clone());
 
     // .route("/health", get(health))

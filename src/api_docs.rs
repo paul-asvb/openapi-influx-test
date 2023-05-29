@@ -12,7 +12,8 @@ pub struct RandomMetadata {
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        r2::dump
+        r2::dump,
+        r2::list
         // device::list,
         // device::register,
         // device::change_metadata,
