@@ -17,7 +17,6 @@ mod api_docs;
 mod config;
 mod measurement;
 mod r2;
-mod minio;
 
 #[tokio::main]
 async fn main() {
