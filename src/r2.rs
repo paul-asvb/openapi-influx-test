@@ -5,13 +5,20 @@ use axum::Json;
 use s3::creds::Credentials;
 use s3::error::S3Error;
 use s3::{Bucket, Region};
+use serde::{Deserialize, Serialize};
 use tracing::debug;
 
 use axum::{body::Bytes, extract::State};
 use chrono::{DateTime, Utc};
 use reqwest::StatusCode;
+use utoipa::ToSchema;
 
 use crate::config::Configuration;
+#[derive(Serialize, Deserialize, ToSchema, Clone, Debug)]
+pub struct KeyList {
+    number_of_keys: usize,
+    keys: Vec<String>,
+}
 
 /// Dump bytes
 #[utoipa::path(
@@ -40,14 +47,17 @@ pub async fn dump(State(config): State<Arc<Configuration>>, body: Bytes) -> Stat
     get,
     path = "/r2/list",
     responses(
-        (status = 200, description = "Will only return list of string with all keys, might return [] on error"),
+        (status = 200, body=KeyList, description = "Will only return list of string with all keys, might return [] on error"),
     )
 )]
 pub async fn list(State(config): State<Arc<Configuration>>) -> impl IntoResponse {
     if let Ok(list) = list_bucket_content(config).await {
         return list;
     } else {
-        return Json(vec![]);
+        return Json(KeyList {
+            number_of_keys: 0,
+            keys: vec![],
+        });
     }
 }
 
@@ -82,7 +92,7 @@ pub async fn store_object(
     Ok(())
 }
 
-pub async fn list_bucket_content(config: Arc<Configuration>) -> Result<Json<Vec<String>>, S3Error> {
+pub async fn list_bucket_content(config: Arc<Configuration>) -> Result<Json<KeyList>, S3Error> {
     let credentials = Credentials::new(
         Some(&config.cf_access_key_id),
         Some(&config.cf_secret_access_key),
@@ -102,35 +112,43 @@ pub async fn list_bucket_content(config: Arc<Configuration>) -> Result<Json<Vec<
     .unwrap()
     .with_path_style();
 
-    //let results = bucket.list("/".to_string(), Some("/".to_string())).await?;
+    let objects = bucket.list("".to_string(), Some("".to_string())).await?;
 
-    //bucket.list_page(path)
+    let mut counter: usize = 0;
 
-    // let response_data = bucket
-    //     .get_object_range("/".to_owned(), 100, Some(1000))
-    //     .await
-    //     .unwrap();
+    for o in &objects {
+        counter = counter + o.contents.len()
+    }
 
-    // dbg!(response_data);
+    let list: Vec<String> = objects
+        .iter()
+        .map(|bu| {
+            bu.contents
+                .iter()
+                .map(|contents| contents.key.clone())
+                .collect::<Vec<String>>()
+        })
+        .flatten()
+        .collect();
 
-    let list = vec![];
+    let keylist = KeyList {
+        number_of_keys: counter,
+        keys: list,
+    };
 
-    // let (results, _) = bucket
-    //     .list_page("/".to_string(), Some("/".to_string()), None, None, Some(100))
-    //     .await?;
-    // let list: Vec<String> = results.contents.iter().map(|res| res.key.clone()).collect();
-    Ok(Json(list))
+    Ok(Json(keylist))
 }
 
 #[cfg(test)]
 mod tests {
 
     use crate::config::Configuration;
+    use crate::r2::list_bucket_content;
 
     use dotenvy::dotenv;
 
     #[tokio::test]
-    async fn test_storage() {
+    async fn test_list() {
         dotenv().ok();
 
         tracing_subscriber::fmt()
@@ -139,6 +157,6 @@ mod tests {
         let config =
             envy::from_env::<Configuration>().expect("required config could not be parsed");
 
-        //list_bucket_content("sdfg".to_owned(), b"sdfg", config).await;
+        let _bla = list_bucket_content(config.into()).await;
     }
 }
