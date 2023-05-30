@@ -15,9 +15,9 @@ use crate::{api_docs::GranitApiDoc, config::Configuration};
 
 mod api_docs;
 mod config;
-//mod device;
 mod measurement;
 mod r2;
+mod minio;
 
 #[tokio::main]
 async fn main() {

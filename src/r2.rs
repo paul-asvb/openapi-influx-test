@@ -130,7 +130,7 @@ mod tests {
     use dotenvy::dotenv;
 
     #[tokio::test]
-    async fn test_list() {
+    async fn test_storage() {
         dotenv().ok();
 
         tracing_subscriber::fmt()
